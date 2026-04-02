@@ -10,7 +10,7 @@ urlpatterns = [
     path("add-faction/", views.add_faction, name="add_faction"),
     # Delete Faction Form Url
     path(
-        "delete-faction/<int:faction_id>/", views.delete_faction, name="delete_faction"
+        "delete-faction/<str:faction_id>/", views.delete_faction, name="delete_faction"
     ),
     # Character List Url
     path("characters/", views.characters_list, name="characters_list"),

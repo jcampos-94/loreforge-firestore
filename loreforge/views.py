@@ -12,7 +12,15 @@ def home(request):
 
 # Display all factions
 def factions_list(request):
-    factions = Faction.objects.all()
+    faction_docs = db.collection("factions").stream()
+
+    factions = []
+
+    for doc in faction_docs:
+        faction_data = doc.to_dict()
+        faction_data["id"] = doc.id
+        factions.append(faction_data)
+
     return render(request, "loreforge/factions.html", {"factions": factions})
 
 
@@ -20,8 +28,16 @@ def factions_list(request):
 def add_faction(request):
     if request.method == "POST":
         form = FactionForm(request.POST)
+
         if form.is_valid():
-            form.save()
+            faction_name = form.cleaned_data["name"]
+            leader_name = form.cleaned_data["leader_name"]
+
+            # Create faction document
+            faction_ref = db.collection("factions").add(
+                {"name": faction_name, "leader_name": leader_name}
+            )
+
             return redirect("factions_list")
     else:
         form = FactionForm()
@@ -31,21 +47,24 @@ def add_faction(request):
 
 # Delete a faction (with confirmation)
 def delete_faction(request, faction_id):
-    faction = get_object_or_404(Faction, id=faction_id)
+    faction_ref = db.collection("factions").document(faction_id)
+    faction = faction_ref.get()
 
-    # Get all characters in this faction
-    members = Character.objects.filter(faction=faction)
+    if not faction.exists:
+        return redirect("factions_list")
+
+    faction_data = faction.to_dict()
+    faction_data["id"] = faction.id
 
     if request.method == "POST":
-        members.delete()  # Delete all characters in faction
-        faction.delete()  # Then delete the faction itself
+        faction_ref.delete()
         return redirect("factions_list")
 
     # Show confirmation page with warning
     return render(
         request,
         "loreforge/delete_faction.html",
-        {"faction": faction, "members": members},
+        {"faction": faction_data},
     )
 
 
