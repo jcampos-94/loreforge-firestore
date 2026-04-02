@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delete Faction</title>
+    <link rel="stylesheet" href="{% static 'loreforge/styles.css' %}" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Delete Faction</h1>
+
+      <p>Are you sure you want to delete "{{ faction.name }}"?</p>
+
+      {% if members.count > 1 %}
+      <p style="color: red">
+        <strong>Warning:</strong> This will delete ALL characters in this
+        faction:
+      </p>
+
+      <ul>
+        {% for character in members %}
+        <li>{{ character.name }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit">Yes, delete everything</button>
+      </form>
+
+      <br />
+      <a href="/factions/">Cancel</a>
+    </main>
+  </body>
+</html>

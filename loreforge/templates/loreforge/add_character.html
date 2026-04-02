@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Character</title>
+    <link rel="stylesheet" href="{% static 'loreforge/styles.css' %}" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Add Character</h1>
+
+      <form method="POST">
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit">Create</button>
+      </form>
+
+      <br />
+      <a href="/characters/">Back to Characters</a>
+    </main>
+  </body>
+</html>

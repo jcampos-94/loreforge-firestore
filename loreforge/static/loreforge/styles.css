@@ -1,0 +1,107 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Top Navigation*/
+
+nav {
+  background-color: #020617;
+  padding: 15px;
+  border-bottom: 2px solid #38bdf8;
+}
+
+nav a {
+  margin-right: 15px;
+  color: #facc15;
+  font-weight: bold;
+}
+
+nav a {
+  margin-right: 15px;
+  color: #facc15;
+  font-weight: bold;
+}
+
+/* Page container */
+.container {
+  padding: 30px;
+}
+
+/* Titles */
+h1 {
+  color: #38bdf8;
+}
+
+h2 {
+  color: #7dd3fc;
+}
+
+/* Cards */
+.card {
+  background-color: #1e293b;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Cards */
+.card {
+  background-color: #1e293b;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+button {
+  background-color: #38bdf8;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Links */
+a {
+  color: #facc15;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+li {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #1e293b;
+  border-radius: 8px;
+}
+
+/* Mentorship Tree */
+.tree {
+  list-style-type: none;
+  margin-left: 20px;
+  padding-left: 20px;
+}
+
+.tree li {
+  margin: 5px 0;
+  position: relative;
+}
+
+.node {
+  color: #e2e8f0;
+  font-weight: bold;
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Factions</title>
+    <link rel="stylesheet" href="{% static 'loreforge/styles.css' %}" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Home</a> |&nbsp;&nbsp;
+      <a href="/characters/">View Characters</a>
+    </nav>
+    <main class="container">
+      <a href="/add-faction/">Add Faction</a>
+      <br /><br />
+      <h1>Factions</h1>
+
+      {% for faction in factions %}
+      <div class="card">
+        <strong>{{ faction.name }}</strong><br />
+        <strong>Leader:</strong>
+        {% if faction.leader %} {{ faction.leader.name }}<br />
+        {% else %} None
+        <br />
+        {% endif %}
+        <br /><br />
+        <a href="/delete-faction/{{ faction.id }}/">Delete</a>
+      </div>
+      {% empty %}
+      <div>No factions found.</div>
+      {% endfor %}
+    </main>
+  </body>
+</html>

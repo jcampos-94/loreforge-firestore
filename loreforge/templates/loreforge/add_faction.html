@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Faction</title>
+    <link rel="stylesheet" href="{% static 'loreforge/styles.css' %}" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Add Faction</h1>
+
+      <form method="POST">
+        {% csrf_token %}
+
+        <label>Faction Name:</label><br />
+        {{ form.name }}<br /><br />
+
+        <label>Leader Name:</label><br />
+        {{ form.leader_name }}<br /><br />
+
+        <button type="submit">Create</button>
+      </form>
+
+      <br />
+      <a href="/factions/">Back to Factions</a>
+    </main>
+  </body>
+</html>

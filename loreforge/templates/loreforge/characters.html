@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Characters</title>
+    <link rel="stylesheet" href="{% static 'loreforge/styles.css' %}" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Home</a> |
+      <a href="/factions/">View Factions</a>
+    </nav>
+    <main class="container">
+      <a href="/add-character/">Add Character</a>
+      <br /><br />
+      <h1>Characters</h1>
+
+      {% for character in characters %}
+      <div class="card">
+        <strong>{{ character.name }}</strong><br />
+        <strong>Role: </strong>{{ character.role }}<br />
+        <strong>Faction: </strong> {{ character.faction.name }}<br />
+        <strong>Mentor: </strong>
+        {% if character.mentor %} {{ character.mentor.name }}<br /><br />
+        {% else %} Unknown<br /><br />
+        {% endif %}
+        <a href="/mentorship-tree/{{ character.id }}/">View Mentorship Tree</a
+        ><br /><br />
+        <a href="/delete-character/{{ character.id }}/">Delete</a>
+      </div>
+      <br />
+      {% empty %}
+      <div>No characters found.</div>
+      {% endfor %}
+    </main>
+  </body>
+</html>

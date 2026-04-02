@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delete Character</title>
+    <link rel="stylesheet" href="{% static 'loreforge/styles.css' %}" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Delete Character</h1>
+
+      <p>Are you sure you want to delete "{{ character.name }}"?</p>
+
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit">Yes, delete</button>
+      </form>
+
+      <br />
+      <a href="/characters/">Cancel</a>
+    </main>
+  </body>
+</html>
