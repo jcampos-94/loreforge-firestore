@@ -9,7 +9,7 @@
   </head>
   <body>
     <main class="container">
-      <h1>Add Faction</h1>
+      <h1>{{ button_text }}</h1>
 
       <form method="POST">
         {% csrf_token %}
@@ -20,7 +20,7 @@
         <label>Leader Name:</label><br />
         {{ form.leader_name }}<br /><br />
 
-        <button type="submit">Create</button>
+        <button type="submit">{{ button_text }}</button>
       </form>
 
       <br />

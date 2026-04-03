@@ -8,6 +8,8 @@ urlpatterns = [
     path("factions/", views.factions_list, name="factions_list"),
     # Add Faction Form Url
     path("add-faction/", views.add_faction, name="add_faction"),
+    # Edit Faction Form Url
+    path("edit-faction/<str:faction_id>/", views.edit_faction, name="edit_faction"),
     # Delete Faction Form Url
     path(
         "delete-faction/<str:faction_id>/", views.delete_faction, name="delete_faction"

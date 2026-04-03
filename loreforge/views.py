@@ -24,7 +24,7 @@ def factions_list(request):
     return render(request, "loreforge/factions.html", {"factions": factions})
 
 
-# Create a new faction (form handling)
+# Create a new faction
 def add_faction(request):
     if request.method == "POST":
         form = FactionForm(request.POST)
@@ -42,7 +42,47 @@ def add_faction(request):
     else:
         form = FactionForm()
 
-    return render(request, "loreforge/add_faction.html", {"form": form})
+    return render(
+        request,
+        "loreforge/add_faction.html",
+        {"form": form, "button_text": "Create Faction"},
+    )
+
+
+# Edit a faction
+def edit_faction(request, faction_id):
+    faction_ref = db.collection("factions").document(faction_id)
+    faction_doc = faction_ref.get()
+
+    if not faction_doc.exists:
+        return redirect("factions_list")
+
+    faction_data = faction_doc.to_dict()
+
+    if request.method == "POST":
+        form = FactionForm(request.POST)
+
+        if form.is_valid():
+            faction_name = form.cleaned_data["name"]
+            leader_name = form.cleaned_data["leader_name"]
+
+            faction_ref.update({"name": faction_name, "leader_name": leader_name})
+
+            return redirect("factions_list")
+
+    else:
+        form = FactionForm(
+            initial={
+                "name": faction_data.get("name", ""),
+                "leader_name": faction_data.get("leader_name", ""),
+            }
+        )
+
+    return render(
+        request,
+        "loreforge/add_faction.html",
+        {"form": form, "button_text": "Edit Faction"},
+    )
 
 
 # Delete a faction (with confirmation)
