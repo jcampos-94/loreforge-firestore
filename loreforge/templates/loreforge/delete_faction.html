@@ -13,7 +13,6 @@
 
       <p>Are you sure you want to delete "{{ faction.name }}"?</p>
 
-      <!-- {% if members.count > 1 %}
       <p style="color: red">
         <strong>Warning:</strong> This will delete ALL characters in this
         faction:
@@ -24,7 +23,6 @@
         <li>{{ character.name }}</li>
         {% endfor %}
       </ul>
-      {% endif %} -->
 
       <form method="POST">
         {% csrf_token %}

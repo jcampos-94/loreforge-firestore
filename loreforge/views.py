@@ -107,18 +107,34 @@ def delete_faction(request, faction_id):
     if not faction.exists:
         return redirect("factions_list")
 
-    faction_data = faction.to_dict()
-    faction_data["id"] = faction.id
+    faction = faction.to_dict()
+    faction["id"] = faction_id
+
+    # Find all members of this faction
+    members = []
+
+    for doc in db.collection("characters").stream():
+        character = doc.to_dict()
+
+        if character.get("faction_id") == faction_id:
+            character["id"] = doc.id
+            members.append(character)
 
     if request.method == "POST":
+        # Delete all members first
+        for member in members:
+            db.collection("characters").document(member["id"]).delete()
+
+        # Delete faction
         faction_ref.delete()
+
         return redirect("factions_list")
 
     # Show confirmation page with warning
     return render(
         request,
         "loreforge/delete_faction.html",
-        {"faction": faction_data},
+        {"faction": faction, "members": members},
     )
 
 
@@ -159,7 +175,7 @@ def characters_list(request):
     return render(request, "loreforge/characters.html", {"characters": characters})
 
 
-# Create a new character (form handling)
+# Create a new character
 def add_character(request):
     if request.method == "POST":
         form = CharacterForm(request.POST)
@@ -183,6 +199,47 @@ def add_character(request):
         request,
         "loreforge/add_character.html",
         {"form": form, "button_text": "Create Character"},
+    )
+
+
+# Edit a character
+def edit_character(request, character_id):
+    character_doc = db.collection("characters").document(character_id).get()
+
+    if not character_doc.exists:
+        return redirect("characters_list")
+
+    character = character_doc.to_dict()
+
+    if request.method == "POST":
+        form = CharacterForm(request.POST)
+
+        if form.is_valid():
+            db.collection("characters").document(character_id).update(
+                {
+                    "name": form.cleaned_data["name"],
+                    "role": form.cleaned_data["role"],
+                    "faction_id": form.cleaned_data["faction"],
+                    "mentor_id": form.cleaned_data["mentor"] or None,
+                }
+            )
+
+            return redirect("characters_list")
+
+    else:
+        form = CharacterForm(
+            initial={
+                "name": character.get("name"),
+                "role": character.get("role"),
+                "faction": character.get("faction_id"),
+                "mentor": character.get("mentor_id"),
+            }
+        )
+
+    return render(
+        request,
+        "loreforge/add_character.html",
+        {"form": form, "button_text": "Edit Character"},
     )
 
 

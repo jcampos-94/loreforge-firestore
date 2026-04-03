@@ -18,6 +18,12 @@ urlpatterns = [
     path("characters/", views.characters_list, name="characters_list"),
     # Add Character Form Url
     path("add-character/", views.add_character, name="add_character"),
+    # Edit Faction Form Url
+    path(
+        "edit-character/<str:character_id>/",
+        views.edit_character,
+        name="edit_character",
+    ),
     # Delete Character Form Url
     path(
         "delete-character/<str:character_id>/",
