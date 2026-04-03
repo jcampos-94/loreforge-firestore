@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Faction, Character
+from .firebase_config import db
 
 
 # Helper: format names (trim + Title Case)
@@ -48,34 +49,29 @@ class FactionForm(forms.ModelForm):
 
 
 # Character Form
-class CharacterForm(forms.ModelForm):
-    class Meta:
-        model = Character
-        fields = ["name", "role", "faction", "mentor"]
+class CharacterForm(forms.Form):
+    name = forms.CharField(max_length=100)
+    role = forms.CharField(max_length=100)
+    faction = forms.ChoiceField(choices=[])
+    mentor = forms.ChoiceField(choices=[], required=False)
 
     # Dynamically filter mentor choices based on selected faction
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        queryset = Character.objects.all()
 
-        if "faction" in self.data:
-            try:
-                faction_id = int(self.data.get("faction"))
-                filtered = Character.objects.filter(faction_id=faction_id)
+        # Load factions from Firestore
+        faction_docs = db.collection("factions").stream()
+        faction_choices = [(doc.id, doc.to_dict().get("name")) for doc in faction_docs]
+        self.fields["faction"].choices = faction_choices
 
-                # Include currently selected mentor (prevents validation issues)
-                mentor_id = self.data.get("mentor")
-                if mentor_id:
-                    queryset = (
-                        filtered | Character.objects.filter(id=mentor_id)
-                    ).distinct()
-                else:
-                    queryset = filtered
+        # Load characters for mentor dropdown
+        character_docs = db.collection("characters").stream()
+        mentor_choices = [(doc.id, doc.to_dict().get("name")) for doc in character_docs]
 
-            except (ValueError, TypeError):
-                pass
+        # Optional empty choice
+        mentor_choices.insert(0, ("", "No mentor"))
 
-        self.fields["mentor"].queryset = queryset
+        self.fields["mentor"].choices = mentor_choices
 
     # Format character name
     def clean_name(self):
@@ -92,32 +88,51 @@ class CharacterForm(forms.ModelForm):
         cleaned_data = super().clean()
 
         name = cleaned_data.get("name")
-        faction = cleaned_data.get("faction")
-        mentor = cleaned_data.get("mentor")
+        faction_id = cleaned_data.get("faction")
+        mentor_id = cleaned_data.get("mentor")
 
-        # Rule 1: Mentor must belong to the same faction
-        if mentor and faction and mentor.faction != faction:
-            self.add_error("mentor", "Mentor must belong to the same faction.")
+        # Rules 1-4: Only validate if Mentor was selected
+        if mentor_id:
+            mentor_doc = db.collection("characters").document(mentor_id).get()
 
-        # Rule 2: Character cannot mentor themselves
-        if mentor and name and mentor.name == name:
-            self.add_error("mentor", "A character cannot mentor themselves.")
+            if not mentor_doc.exists:
+                self.add_error("mentor", "Selected mentor does not exist.")
+                return cleaned_data
 
-        # Rules 3 & 4: Prevent circular and recursive loops
-        if mentor:
+            mentor_data = mentor_doc.to_dict()
+
+            # Rule 1: Mentor must belong to the same faction
+            if mentor_data.get("faction_id") != faction_id:
+                self.add_error("mentor", "Mentor must belong to the same faction.")
+
+            # Rule 2: Character cannot mentor themselves
+            if mentor_data.get("name") == name:
+                self.add_error("mentor", "A character cannot mentor themselves.")
+
+            # Rules 3 & 4: Circular / recursive loop detection
             visited = set()
-            current = mentor
+            current_id = mentor_id
 
-            while current:
+            while current_id:
                 # Detect circular references
-                if current in visited:
+                if current_id in visited:
                     self.add_error(None, "Circular mentorship detected.")
+                    break
+
+                visited.add(current_id)
+
+                current_doc = db.collection("characters").document(current_id).get()
+
+                if not current_doc.exists:
+                    break
+
+                current_data = current_doc.to_dict()
 
                 # Prevent loops back to the same character
-                if current.name == name:
+                if current_data.get("name") == name:
                     self.add_error(None, "Mentorship loop detected.")
+                    break
 
-                visited.add(current)
-                current = current.mentor
+                current_id = current_data.get("mentor_id")
 
         return cleaned_data

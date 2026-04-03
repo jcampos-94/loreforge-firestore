@@ -21,9 +21,9 @@
       <div class="card">
         <strong>{{ character.name }}</strong><br />
         <strong>Role: </strong>{{ character.role }}<br />
-        <strong>Faction: </strong> {{ character.faction.name }}<br />
+        <strong>Faction: </strong> {{ character.faction_name }}<br />
         <strong>Mentor: </strong>
-        {% if character.mentor %} {{ character.mentor.name }}<br /><br />
+        {% if character.mentor_name %} {{ character.mentor_name }}<br /><br />
         {% else %} Unknown<br /><br />
         {% endif %}
         <a href="/mentorship-tree/{{ character.id }}/">View Mentorship Tree</a

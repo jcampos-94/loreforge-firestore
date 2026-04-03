@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from .models import Faction, Character
 from .forms import FactionForm, CharacterForm
 from .firebase_config import db
+from datetime import datetime, UTC
 
 
 # Main page (landing view)
@@ -33,9 +34,22 @@ def add_faction(request):
             faction_name = form.cleaned_data["name"]
             leader_name = form.cleaned_data["leader_name"]
 
-            # Create faction document
+            # Create faction first
             faction_ref = db.collection("factions").add(
                 {"name": faction_name, "leader_name": leader_name}
+            )
+
+            faction_id = faction_ref[1].id
+
+            # Create faction leader automatically
+            db.collection("characters").add(
+                {
+                    "name": leader_name,
+                    "role": f"Leader of the {faction_name}",
+                    "faction_id": faction_id,
+                    "mentor_id": None,
+                    "created_at": datetime.now(UTC).isoformat(),
+                }
             )
 
             return redirect("factions_list")
@@ -110,60 +124,134 @@ def delete_faction(request, faction_id):
 
 # Display all characters
 def characters_list(request):
-    # Optimize query by loading related faction and mentor in one go
-    characters = Character.objects.select_related("faction", "mentor").all()
+    character_docs = db.collection("characters").stream()
+
+    characters = []
+
+    for doc in character_docs:
+        character = doc.to_dict()
+        character["id"] = doc.id
+
+        # Resolve Faction name
+        faction_id = character.get("faction_id")
+        if faction_id:
+            faction_doc = db.collection("factions").document(faction_id).get()
+            if faction_doc.exists:
+                character["faction_name"] = faction_doc.to_dict().get("name")
+            else:
+                character["faction_name"] = "Uknown"
+        else:
+            character["faction_name"] = "Uknown"
+
+        # Resolve Mentor name
+        mentor_id = character.get("mentor_id")
+        if mentor_id:
+            mentor_doc = db.collection("characters").document(mentor_id).get()
+            if mentor_doc.exists:
+                character["mentor_name"] = mentor_doc.to_dict().get("name")
+            else:
+                character["mentor_name"] = "Uknown"
+        else:
+            character["mentor_name"] = "Unknown"
+
+        characters.append(character)
+
     return render(request, "loreforge/characters.html", {"characters": characters})
 
 
 # Create a new character (form handling)
 def add_character(request):
     if request.method == "POST":
-        form = CharacterForm(request.POST)  # Bind submitted data
+        form = CharacterForm(request.POST)
+
         if form.is_valid():
-            character = form.save()  # Save character
+            db.collection("characters").add(
+                {
+                    "name": form.cleaned_data["name"],
+                    "role": form.cleaned_data["role"],
+                    "faction_id": form.cleaned_data["faction"],
+                    "mentor_id": form.cleaned_data["mentor"] or None,
+                    "created_at": datetime.now(UTC).isoformat(),
+                }
+            )
+
             return redirect("characters_list")
     else:
-        form = CharacterForm()  # Empty form for GET request
+        form = CharacterForm()
 
-    return render(request, "loreforge/add_character.html", {"form": form})
+    return render(
+        request,
+        "loreforge/add_character.html",
+        {"form": form, "button_text": "Create Character"},
+    )
 
 
 # Delete a character with mentorship and leadership handling
 def delete_character(request, character_id):
-    character = get_object_or_404(Character, id=character_id)
-    faction = character.faction
+    character_ref = db.collection("characters").document(character_id)
+    character_doc = character_ref.get()
 
-    # Check if character is leader and store their mentor
-    is_leader = faction.leader == character
-    mentor = character.mentor
+    if not character_doc.exists:
+        return redirect("characters_list")
+
+    character = character_doc.to_dict()
+    character["id"] = character_id
 
     if request.method == "POST":
-        # STEP 1 — RReassign students to the deleted character's mentor
-        students = Character.objects.filter(mentor=character)
+        faction_id = character.get("faction_id")
+        deleted_name = character.get("name")
+        deleted_mentor_id = character.get("mentor_id")
 
-        for student in students:
-            student.mentor = mentor  # inherit mentor
-            student.save()
+        faction_ref = db.collection("factions").document(faction_id)
+        faction_doc = faction_ref.get()
+
+        faction_data = faction_doc.to_dict() if faction_doc.exists else None
+        is_leader = faction_data and faction_data.get("leader_name") == deleted_name
+
+        # STEP 1 — Reassign students
+        student_docs = db.collection("characters").stream()
+
+        for doc in student_docs:
+            student = doc.to_dict()
+
+            if student.get("mentor_id") == character_id:
+                db.collection("characters").document(doc.id).update(
+                    {"mentor_id": deleted_mentor_id}
+                )
 
         # STEP 2 — Delete Character
-        character.delete()
+        character_ref.delete()
 
         # STEP 3 — Handle leader reassignment
-        remaining_members = Character.objects.filter(faction=faction)
-
         if is_leader:
-            if not remaining_members.exists():
-                # If no members remain, delete faction
-                faction.delete()
-            else:
-                # Promote first available member as new leader
-                new_leader = remaining_members.first()
-                faction.leader = new_leader
-                new_leader.role = f"Leader of the {faction.name}"
-                new_leader.save()
-                faction.save()
+            remaining_members = []
 
-        return redirect("characters_list")
+            for doc in db.collection("characters").stream():
+                member = doc.to_dict()
+
+                if member.get("faction_id") == faction_id:
+                    remaining_members.append(
+                        {
+                            "doc_id": doc.id,
+                            "name": member.get("name"),
+                            "role": member.get("role"),
+                            "created_at": member.get("created_at", ""),
+                        }
+                    )
+
+            if not remaining_members:
+                faction_ref.delete()
+            else:
+                remaining_members.sort(key=lambda member: member.get("created_at", ""))
+                new_leader = remaining_members[0]
+
+                db.collection("characters").document(new_leader["doc_id"]).update(
+                    {"role": f"Leader of the {faction_data['name']}"}
+                )
+
+                faction_ref.update({"leader_name": new_leader["name"]})
+
+        return redirect(characters_list)
 
     return render(request, "loreforge/delete_character.html", {"character": character})
 
