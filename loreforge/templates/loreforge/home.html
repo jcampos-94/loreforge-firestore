@@ -21,6 +21,37 @@
         <li><a href="/add-faction/">Create Faction</a></li>
         <li><a href="/add-character/">Create Character</a></li>
       </ul>
+
+      <h2>Recent World Events</h2>
+
+      {% for log in logs %}
+      <div class="card">
+        <strong>{{ log.action }}</strong><br />
+        {{ log.details }}<br />
+        <small class="local-time" data-time="{{ log.created_at }}"></small>
+      </div>
+      {% empty %}
+      <div>No events have been recorded yet.</div>
+      {% endfor %}
     </main>
+
+    <script>
+      document.querySelectorAll('.local-time').forEach((element) => {
+        const utcTime = element.dataset.time;
+        const localDate = new Date(utcTime);
+
+        const formatted = localDate.toLocaleString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+
+        // Replace the default comma before time with a dash
+        element.textContent = formatted;
+      });
+    </script>
   </body>
 </html>

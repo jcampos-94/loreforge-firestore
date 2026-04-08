@@ -4,11 +4,21 @@ from .models import Faction, Character
 from .forms import FactionForm, CharacterForm
 from .firebase_config import db
 from datetime import datetime, UTC
+from zoneinfo import ZoneInfo
 
 
 # Main page (landing view)
 def home(request):
-    return render(request, "loreforge/home.html")
+    logs = []
+
+    for doc in db.collection("activity_logs").stream():
+        log = doc.to_dict()
+        log["id"] = doc.id
+        logs.append(log)
+
+    logs.sort(key=lambda log: log.get("created_at", ""), reverse=True)
+
+    return render(request, "loreforge/home.html", {"logs": logs[:5]})
 
 
 # Display all factions
@@ -50,6 +60,11 @@ def add_faction(request):
                     "mentor_id": None,
                     "created_at": datetime.now(UTC).isoformat(),
                 }
+            )
+
+            log_activity(
+                "New Faction Rises",
+                f"The {faction_name} has emerged under the leadership of {leader_name}.",
             )
 
             return redirect("factions_list")
@@ -128,6 +143,11 @@ def delete_faction(request, faction_id):
         # Delete faction
         faction_ref.delete()
 
+        log_activity(
+            "War Tragedy",
+            f"The {faction['name']} and all its members have joined their ancestors after honorable combat.",
+        )
+
         return redirect("factions_list")
 
     # Show confirmation page with warning
@@ -191,6 +211,25 @@ def add_character(request):
                 }
             )
 
+            mentor_text = ""
+            if form.cleaned_data["mentor"]:
+                mentor_doc = (
+                    db.collection("characters")
+                    .document(form.cleaned_data["mentor"])
+                    .get()
+                )
+
+                if mentor_doc.exists:
+                    mentor_name = mentor_doc.to_dict().get("name")
+                    mentor_text = f", mentored by {mentor_name}"
+
+            faction_name = get_faction_name(form.cleaned_data["faction"])
+
+            log_activity(
+                "New Hero",
+                f"{form.cleaned_data["name"]} joined the {faction_name} as {form.cleaned_data["role"]}{mentor_text}.",
+            )
+
             return redirect("characters_list")
     else:
         form = CharacterForm()
@@ -222,6 +261,25 @@ def edit_character(request, character_id):
                     "faction_id": form.cleaned_data["faction"],
                     "mentor_id": form.cleaned_data["mentor"] or None,
                 }
+            )
+
+            mentor_text = ""
+            if form.cleaned_data["mentor"]:
+                mentor_doc = (
+                    db.collection("characters")
+                    .document(form.cleaned_data["mentor"])
+                    .get()
+                )
+
+                if mentor_doc.exists:
+                    mentor_name = mentor_doc.to_dict().get("name")
+                    mentor_text = f", mentored by {mentor_name}"
+
+            faction_name = get_faction_name(form.cleaned_data["faction"])
+
+            log_activity(
+                "Status Change",
+                f"{form.cleaned_data["name"]} is now a {form.cleaned_data["role"]} of the {faction_name}{mentor_text}.",
             )
 
             return redirect("characters_list")
@@ -279,6 +337,11 @@ def delete_character(request, character_id):
         # STEP 2 — Delete Character
         character_ref.delete()
 
+        log_activity(
+            "Missing in Action",
+            f"{deleted_name} did not return home after the last battle.",
+        )
+
         # STEP 3 — Handle leader reassignment
         if is_leader:
             remaining_members = []
@@ -314,20 +377,59 @@ def delete_character(request, character_id):
 
 
 # Recursively build mentorship hierarchy
-def build_tree(character):
-    # Get all direct students of this character
-    students = Character.objects.filter(mentor=character)
+def build_tree(character_id):
+    character_doc = db.collection("characters").document(character_id).get()
+
+    if not character_doc.exists:
+        return None
+
+    character = character_doc.to_dict()
+    character["id"] = character_id
+
+    students = []
+
+    # Find all direct students
+    for doc in db.collection("characters").stream():
+        student = doc.to_dict()
+
+        if student.get("mentor_id") == character_id:
+            subtree = build_tree(doc.id)
+
+            if subtree:
+                students.append(subtree)
 
     return {
         "character": character,
-        # Recursively build subtree for each student
-        "students": [build_tree(student) for student in students],
+        "students": students,
     }
 
 
 # Display mentorship tree starting from a character
 def mentorship_tree(request, character_id):
-    character = get_object_or_404(Character, id=character_id)
-    tree = build_tree(character)  # Build full hierarchy
+    tree = build_tree(character_id)
+
+    if not tree:
+        return redirect("characters_list")
 
     return render(request, "loreforge/mentorship_tree.html", {"tree": tree})
+
+
+# Log
+def log_activity(action, details):
+    db.collection("activity_logs").add(
+        {
+            "action": action,
+            "details": details,
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+    )
+
+
+# Log helper function
+def get_faction_name(faction_id):
+    faction_doc = db.collection("factions").document(faction_id).get()
+
+    if faction_doc.exists:
+        return faction_doc.to_dict().get("name", "Unknown Faction")
+
+    return "Unknown Faction"

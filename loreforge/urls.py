@@ -32,7 +32,7 @@ urlpatterns = [
     ),
     # Mentorship Tree Url
     path(
-        "mentorship-tree/<int:character_id>/",
+        "mentorship-tree/<str:character_id>/",
         views.mentorship_tree,
         name="mentorship_tree",
     ),
