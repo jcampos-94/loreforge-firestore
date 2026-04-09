@@ -1,93 +1,81 @@
 # Overview
 
-As a software developer, I am focused on building applications that combine structured data management with meaningful user interaction. This project was designed to strengthen my understanding of full-stack development concepts, particularly how backend logic, relational data, and dynamic interfaces work together in a web application.
+As a software developer, I am focused on expanding my ability to build modern web applications that use cloud services for persistent data storage. With this project, my goal was to strengthen my understanding of cloud databases, data relationships, and how web applications can interact with remote services in real time.
 
-LoreForge is a web-based world-building tool that allows users to create and manage factions and characters, including hierarchical mentorship relationships. The application supports creating, viewing, and deleting entities, while maintaining data integrity through validation rules and relational logic.
+LoreForge is a web-based world-building application that allows users to create and manage fantasy factions and characters. The software integrates with Google Firebase Firestore as its cloud database, where all faction data, character records, mentorship relationships, and activity logs are stored. Users can create, view, edit, and delete both factions and characters through the web interface, while the data is stored and retrieved directly from the cloud.
 
-The purpose of this software is to explore how complex relationships (such as mentorship hierarchies) can be modeled, validated, and visualized in a web environment using Django.
+The purpose of this software was to learn how cloud databases can replace local storage solutions while maintaining full CRUD functionality, data validation, and relationship management across multiple collections.
 
-# Web Pages
+# Cloud Database
 
-## Home Page
+This project uses **Google Firebase Firestore** as its cloud database service. Firestore is a NoSQL document database that stores data in collections and documents, making it flexible for applications with evolving structures and nested relationships.
 
-- Serves as the main navigation hub.
-- Provides quick access to all main features (viewing and creating factions and characters).
+The database currently contains three main collections:
 
-## Factions Page
+- **factions**
+  - Stores faction information such as name and leader name
+- **characters**
+  - Stores character name, role, faction ID, mentor ID, and creation date
+- **activity_logs**
+  - Stores world events such as faction creation, character updates, and deletions
 
-- Displays all factions dynamically from the database.
-- Shows each faction’s leader.
-- Includes navigation to delete a faction.
+Relationships are maintained through document IDs:
 
-## Characters Page
+- `faction_id` connects characters to factions
+- `mentor_id` connects characters to other characters
 
-- Displays all characters dynamically.
-- Shows role, faction, and mentor relationships.
-- Includes options to view mentorship trees and delete characters.
-
-## Add Faction Page
-
-- Form that allows users to create a faction and its leader at the same time.
-- Automatically creates a leader character and assigns it to the faction.
-
-## Add Character Page
-
-- Form to create a new character.
-- Dynamically filters mentor options based on selected faction.
-- Applies validation rules (same faction, no self-mentoring, no loops).
-
-## Delete Character Page
-
-- Confirmation page before deletion.
-- Reassigns students to the deleted character’s mentor.
-- Handles leader reassignment or faction deletion if necessary.
-
-## Delete Faction Page
-
-- Confirmation page showing all members of the faction.
-- Deletes all associated characters before removing the faction.
-
-## Mentorship Tree Page
-
-- Displays a recursive hierarchy of characters.
-- Dynamically generated using a tree structure built in Python and rendered with a recursive template.
+This allows the application to build recursive mentorship trees and preserve world structure.
 
 # Development Environment
 
-**Tools Used**:
+## Tools Used
 
-- **Visual Studio Code**: Used as the primary IDE for its strong support for web development and extensions that improve productivity.
-- **Git and GitHub**: Used for version control, tracking changes, and managing the project repository.
+- **Visual Studio Code** — primary development environment
+- **Git & GitHub** — version control and project tracking
+- **Firebase Console** — cloud database setup and monitoring
+- **Google Firestore** — cloud data storage
 
-**Programming Language & Libraries:**
+## Programming Language and Libraries
 
-- **Python**: Used as the core backend language to handle application logic, data processing, and server-side operations.
-- **Django**: Used as the web framework to manage routing, models, forms, and dynamic page rendering.
-- **HTML**: Used to structure the web pages and display dynamic content from the backend.
-- **CSS**: Used to style the application and improve the visual layout and user experience.
+- **Python**
+- **Django**
+- **Firebase Admin SDK**
+- **HTML**
+- **CSS**
+- **JavaScript**
 
-**Execution Instructions:**
+Main Python library used for cloud integration:
 
-To run the application locally:
+```bash
+pip install firebase-admin
+```
 
-1. **Navigate to the project folder**:
-   ```bash
-   cd loreforge-django
-   ```
-2. **Start the development server**: `python manage.py runserver`
-3. **Open your browser and go to**: `http://127.0.0.1:8000/`
+## Execution Instructions
 
-This will load the main page of the application.
+Run locally with:
+
+```bash
+python manage.py runserver
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/
+```
 
 # Useful Websites
 
-- [Django Documentation](https://docs.djangoproject.com/en/6.0/) - Used for understanding models, views, forms, and overall framework structure.
-- [MDN Web Docs](https://developer.mozilla.org/) - Used for HTML and CSS reference and best practices.
-- [W3Schools Django Tutorial](https://www.w3schools.com/django/) - Used as a beginner-friendly reference for Django concepts and syntax.
-- [Stack Overflow](https://stackoverflow.com) - Used for troubleshooting errors and finding solutions to specific implementation issues.
+- [Firebase Documentation](https://firebase.google.com/docs/firestore)
+- [Django Documentation](https://docs.djangoproject.com/)
+- [Firebase Admin Python SDK](https://firebase.google.com/docs/admin/setup)
+- [MDN Web Docs](https://developer.mozilla.org/)
+- [Stack Overflow](https://stackoverflow.com/)
 
 # Future Work
 
-- Add editing functionality for characters and factions
-- Improve mentorship tree visualization with more advanced styling
-- Add user authentication and persistent user-specific worlds
+- Improve visual design and responsive layout
+- Add user authentication with Firebase Auth
+- Add real-time Firestore listeners for live updates
+- Improve mentorship tree visualization
+- Add search and filtering tools for large worlds

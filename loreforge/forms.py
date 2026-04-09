@@ -1,5 +1,4 @@
 from django import forms
-from django.core.exceptions import ValidationError
 from .models import Faction, Character
 from .firebase_config import db
 
@@ -10,7 +9,7 @@ def format_name(value):
     return " ".join(word.capitalize() for word in words)
 
 
-# Faction Form
+# Faction form used for validation and Firestore input formatting
 class FactionForm(forms.ModelForm):
     # Extra field (not in model) to create leader
     leader_name = forms.CharField(max_length=100)
@@ -26,26 +25,6 @@ class FactionForm(forms.ModelForm):
     # Format leader name
     def clean_leader_name(self):
         return format_name(self.cleaned_data["leader_name"])
-
-    # Custom save to create leader character automatically
-    def save(self, commit=True):
-        faction = super().save(commit=False)
-
-        leader_name = self.cleaned_data["leader_name"]
-
-        if commit:
-            faction.save()
-
-            # Create leader as a Character
-            leader = Character.objects.create(
-                name=leader_name, role=f"Leader of the {faction.name}", faction=faction
-            )
-
-            # Assign leader to faction
-            faction.leader = leader
-            faction.save()
-
-        return faction
 
 
 # Character Form

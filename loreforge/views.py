@@ -1,10 +1,7 @@
 from django.shortcuts import render, redirect
-from django.shortcuts import get_object_or_404
-from .models import Faction, Character
 from .forms import FactionForm, CharacterForm
 from .firebase_config import db
 from datetime import datetime, UTC
-from zoneinfo import ZoneInfo
 
 
 # Main page (landing view)
@@ -414,7 +411,7 @@ def mentorship_tree(request, character_id):
     return render(request, "loreforge/mentorship_tree.html", {"tree": tree})
 
 
-# Log
+# Save an event entry to the Firestore activity log
 def log_activity(action, details):
     db.collection("activity_logs").add(
         {
@@ -425,7 +422,7 @@ def log_activity(action, details):
     )
 
 
-# Log helper function
+# Helper function to retrieve a faction name from Firestore by ID
 def get_faction_name(faction_id):
     faction_doc = db.collection("factions").document(faction_id).get()
 
